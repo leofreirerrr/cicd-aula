@@ -27,7 +27,7 @@ jobs:
           pip install pytest httpx
 
       - name: Rodar Testes (Pytest)
-        run: pytest
+        run: python -m pytest
 
       - name: Login no GitHub Container Registry
         uses: docker/login-action@v3
