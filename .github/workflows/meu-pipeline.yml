@@ -1,0 +1,46 @@
+name: Pipeline de Teste e Build
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout do codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          pip install pytest httpx
+
+      - name: Rodar Testes (Pytest)
+        run: pytest
+
+      - name: Login no GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build e Push da Imagem
+        run: |
+          # Transforma o nome do repo em minúsculas (exigência do Docker)
+          IMAGE_NAME=ghcr.io/$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+          
+          # Cria a imagem e sobe
+          docker build . --file Dockerfile --tag $IMAGE_NAME:latest
+          docker push $IMAGE_NAME:latest
